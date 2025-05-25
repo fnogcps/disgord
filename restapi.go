@@ -12,12 +12,13 @@ package disgord
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
-	_ "image/jpeg" // For JPEG decoding
-	_ "image/png"  // For PNG decoding
+	"image"        // For JPEG decoding
+	_ "image/jpeg" // For PNG decoding
+	_ "image/png"
 	"io"
 	"io/ioutil"
 	"log"
@@ -26,8 +27,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"context"
 )
 
 // All error constants
@@ -325,7 +324,6 @@ func unmarshal(data []byte, v interface{}) error {
 // User returns the user details of the given userID
 // userID    : A user ID or "@me" which is a shortcut of current user ID
 func (s *Session) User(userID string, options ...RequestOption) (st *User, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointUser(userID), nil, EndpointUsers, options...)
 	if err != nil {
 		return
@@ -360,7 +358,6 @@ func (s *Session) UserAvatarDecode(u *User, options ...RequestOption) (img image
 
 // UserUpdate updates current user settings.
 func (s *Session) UserUpdate(username, avatar, banner string, options ...RequestOption) (st *User, err error) {
-
 	// NOTE: Avatar must be either the hash/id of existing Avatar or
 	// data:image/png;base64,BASE64_STRING_OF_NEW_AVATAR_PNG
 	// to set a new avatar.
@@ -399,7 +396,6 @@ func (s *Session) UserConnections(options ...RequestOption) (conn []*UserConnect
 // UserChannelCreate creates a new User (Private) Channel with another User
 // recipientID : A user ID for the user to which this channel is opened with.
 func (s *Session) UserChannelCreate(recipientID string, options ...RequestOption) (st *Channel, err error) {
-
 	data := struct {
 		RecipientID string `json:"recipient_id"`
 	}{recipientID}
@@ -431,7 +427,6 @@ func (s *Session) UserGuildMember(guildID string, options ...RequestOption) (st 
 // afterID     : If provided all guilds returned will be after given ID.
 // withCounts  : Whether to include approximate member and presence counts or not.
 func (s *Session) UserGuilds(limit int, beforeID, afterID string, withCounts bool, options ...RequestOption) (st []*UserGuild, err error) {
-
 	v := url.Values{}
 
 	if limit > 0 {
@@ -595,7 +590,6 @@ func (s *Session) Guild(guildID string, options ...RequestOption) (st *Guild, er
 // GuildWithCounts returns a Guild structure of a specific Guild with approximate member and presence counts.
 // guildID    : The ID of a Guild
 func (s *Session) GuildWithCounts(guildID string, options ...RequestOption) (st *Guild, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuild(guildID)+"?with_counts=true", nil, EndpointGuild(guildID), options...)
 	if err != nil {
 		return
@@ -620,7 +614,6 @@ func (s *Session) GuildPreview(guildID string, options ...RequestOption) (st *Gu
 // GuildCreate creates a new Guild
 // name      : A name for the Guild (2-100 characters)
 func (s *Session) GuildCreate(name string, options ...RequestOption) (st *Guild, err error) {
-
 	data := struct {
 		Name string `json:"name"`
 	}{name}
@@ -638,7 +631,6 @@ func (s *Session) GuildCreate(name string, options ...RequestOption) (st *Guild,
 // guildID   : The ID of a Guild
 // g 		 : A GuildParams struct with the values Name, Region and VerificationLevel defined.
 func (s *Session) GuildEdit(guildID string, g *GuildParams, options ...RequestOption) (st *Guild, err error) {
-
 	// Bounds checking for VerificationLevel, interval: [0, 4]
 	if g.VerificationLevel != nil {
 		val := *g.VerificationLevel
@@ -679,7 +671,6 @@ func (s *Session) GuildEdit(guildID string, g *GuildParams, options ...RequestOp
 // GuildDelete deletes a Guild.
 // guildID   : The ID of a Guild
 func (s *Session) GuildDelete(guildID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuild(guildID), nil, EndpointGuild(guildID), options...)
 	return
 }
@@ -687,7 +678,6 @@ func (s *Session) GuildDelete(guildID string, options ...RequestOption) (err err
 // GuildLeave leaves a Guild.
 // guildID   : The ID of a Guild
 func (s *Session) GuildLeave(guildID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointUserGuild("@me", guildID), nil, EndpointUserGuild("", guildID), options...)
 	return
 }
@@ -735,7 +725,6 @@ func (s *Session) GuildBanCreate(guildID, userID string, days int, options ...Re
 
 // GuildBan finds ban by given guild and user id and returns GuildBan structure
 func (s *Session) GuildBan(guildID, userID string, options ...RequestOption) (st *GuildBan, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildBan(guildID, userID), nil, EndpointGuildBan(guildID, userID), options...)
 	if err != nil {
 		return
@@ -752,7 +741,6 @@ func (s *Session) GuildBan(guildID, userID string, options ...RequestOption) (st
 // reason    : The reason for this ban
 // days      : The number of days of previous comments to delete.
 func (s *Session) GuildBanCreateWithReason(guildID, userID, reason string, days int, options ...RequestOption) (err error) {
-
 	uri := EndpointGuildBan(guildID, userID)
 
 	queryParams := url.Values{}
@@ -775,7 +763,6 @@ func (s *Session) GuildBanCreateWithReason(guildID, userID, reason string, days 
 // guildID   : The ID of a Guild.
 // userID    : The ID of a User
 func (s *Session) GuildBanDelete(guildID, userID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildBan(guildID, userID), nil, EndpointGuildBan(guildID, ""), options...)
 	return
 }
@@ -785,7 +772,6 @@ func (s *Session) GuildBanDelete(guildID, userID string, options ...RequestOptio
 // after    : The id of the member to return members after
 // limit    : max number of members to return (max 1000)
 func (s *Session) GuildMembers(guildID string, after string, limit int, options ...RequestOption) (st []*Member, err error) {
-
 	uri := EndpointGuildMembers(guildID)
 
 	v := url.Values{}
@@ -816,7 +802,6 @@ func (s *Session) GuildMembers(guildID string, after string, limit int, options 
 // query    : Query string to match username(s) and nickname(s) against
 // limit    : Max number of members to return (default 1, min 1, max 1000)
 func (s *Session) GuildMembersSearch(guildID, query string, limit int, options ...RequestOption) (st []*Member, err error) {
-
 	uri := EndpointGuildMembersSearch(guildID)
 
 	queryParams := url.Values{}
@@ -838,7 +823,6 @@ func (s *Session) GuildMembersSearch(guildID, query string, limit int, options .
 // guildID   : The ID of a Guild.
 // userID    : The ID of a User
 func (s *Session) GuildMember(guildID, userID string, options ...RequestOption) (st *Member, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildMember(guildID, userID), nil, EndpointGuildMember(guildID, ""), options...)
 	if err != nil {
 		return
@@ -855,7 +839,6 @@ func (s *Session) GuildMember(guildID, userID string, options ...RequestOption) 
 // userID        : The ID of a User.
 // data          : Parameters of the user to add.
 func (s *Session) GuildMemberAdd(guildID, userID string, data *GuildMemberAddParams, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("PUT", EndpointGuildMember(guildID, userID), data, EndpointGuildMember(guildID, ""), options...)
 	if err != nil {
 		return err
@@ -868,7 +851,6 @@ func (s *Session) GuildMemberAdd(guildID, userID string, data *GuildMemberAddPar
 // guildID   : The ID of a Guild.
 // userID    : The ID of a User
 func (s *Session) GuildMemberDelete(guildID, userID string, options ...RequestOption) (err error) {
-
 	return s.GuildMemberDeleteWithReason(guildID, userID, "", options...)
 }
 
@@ -877,7 +859,6 @@ func (s *Session) GuildMemberDelete(guildID, userID string, options ...RequestOp
 // userID    : The ID of a User
 // reason    : The reason for the kick
 func (s *Session) GuildMemberDeleteWithReason(guildID, userID, reason string, options ...RequestOption) (err error) {
-
 	uri := EndpointGuildMember(guildID, userID)
 	if reason != "" {
 		uri += "?reason=" + url.QueryEscape(reason)
@@ -934,7 +915,6 @@ func (s *Session) GuildMemberMove(guildID string, userID string, channelID *stri
 // userID    : The ID of a user or "@me" which is a shortcut of the current user ID
 // nickname  : The nickname of the member, "" will reset their nickname
 func (s *Session) GuildMemberNickname(guildID, userID, nickname string, options ...RequestOption) (err error) {
-
 	data := struct {
 		Nick string `json:"nick"`
 	}{nickname}
@@ -991,7 +971,6 @@ func (s *Session) GuildMemberDeafen(guildID string, userID string, deaf bool, op
 // userID    : The ID of a User.
 // roleID    : The ID of a Role to be assigned to the user.
 func (s *Session) GuildMemberRoleAdd(guildID, userID, roleID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("PUT", EndpointGuildMemberRole(guildID, userID, roleID), nil, EndpointGuildMemberRole(guildID, "", ""), options...)
 
 	return
@@ -1002,7 +981,6 @@ func (s *Session) GuildMemberRoleAdd(guildID, userID, roleID string, options ...
 // userID    : The ID of a User.
 // roleID    : The ID of a Role to be removed from the user.
 func (s *Session) GuildMemberRoleRemove(guildID, userID, roleID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildMemberRole(guildID, userID, roleID), nil, EndpointGuildMemberRole(guildID, "", ""), options...)
 
 	return
@@ -1012,7 +990,6 @@ func (s *Session) GuildMemberRoleRemove(guildID, userID, roleID string, options 
 // given guild.
 // guildID   : The ID of a Guild.
 func (s *Session) GuildChannels(guildID string, options ...RequestOption) (st []*Channel, err error) {
-
 	body, err := s.RequestRaw("GET", EndpointGuildChannels(guildID), "", nil, EndpointGuildChannels(guildID), 0, options...)
 	if err != nil {
 		return
@@ -1065,7 +1042,6 @@ func (s *Session) GuildChannelCreate(guildID, name string, ctype ChannelType, op
 // guildID   : The ID of a Guild.
 // channels  : Updated channels.
 func (s *Session) GuildChannelsReorder(guildID string, channels []*Channel, options ...RequestOption) (err error) {
-
 	data := make([]struct {
 		ID       string `json:"id"`
 		Position int    `json:"position"`
@@ -1095,7 +1071,6 @@ func (s *Session) GuildInvites(guildID string, options ...RequestOption) (st []*
 // GuildRoles returns all roles for a given guild.
 // guildID   : The ID of a Guild.
 func (s *Session) GuildRoles(guildID string, options ...RequestOption) (st []*Role, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildRoles(guildID), nil, EndpointGuildRoles(guildID), options...)
 	if err != nil {
 		return
@@ -1125,7 +1100,6 @@ func (s *Session) GuildRoleCreate(guildID string, data *RoleParams, options ...R
 // roleID    : The ID of a Role.
 // data 		 : Updated Role data.
 func (s *Session) GuildRoleEdit(guildID, roleID string, data *RoleParams, options ...RequestOption) (st *Role, err error) {
-
 	// Prevent sending a color int that is too big.
 	if data.Color != nil && *data.Color > 0xFFFFFF {
 		return nil, fmt.Errorf("color value cannot be larger than 0xFFFFFF")
@@ -1145,7 +1119,6 @@ func (s *Session) GuildRoleEdit(guildID, roleID string, data *RoleParams, option
 // guildID   : The ID of a Guild.
 // roles     : A list of ordered roles.
 func (s *Session) GuildRoleReorder(guildID string, roles []*Role, options ...RequestOption) (st []*Role, err error) {
-
 	body, err := s.RequestWithBucketID("PATCH", EndpointGuildRoles(guildID), roles, EndpointGuildRoles(guildID), options...)
 	if err != nil {
 		return
@@ -1160,7 +1133,6 @@ func (s *Session) GuildRoleReorder(guildID string, roles []*Role, options ...Req
 // guildID   : The ID of a Guild.
 // roleID    : The ID of a Role.
 func (s *Session) GuildRoleDelete(guildID, roleID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildRole(guildID, roleID), nil, EndpointGuildRole(guildID, ""), options...)
 
 	return
@@ -1203,7 +1175,6 @@ func (s *Session) GuildPruneCount(guildID string, days uint32, options ...Reques
 // guildID	: The ID of a Guild.
 // days		: The number of days to count prune for (1 or more).
 func (s *Session) GuildPrune(guildID string, days uint32, options ...RequestOption) (count uint32, err error) {
-
 	count = 0
 
 	if days <= 0 {
@@ -1237,7 +1208,6 @@ func (s *Session) GuildPrune(guildID string, days uint32, options ...RequestOpti
 // GuildIntegrations returns an array of Integrations for a guild.
 // guildID   : The ID of a Guild.
 func (s *Session) GuildIntegrations(guildID string, options ...RequestOption) (st []*Integration, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildIntegrations(guildID), nil, EndpointGuildIntegrations(guildID), options...)
 	if err != nil {
 		return
@@ -1253,7 +1223,6 @@ func (s *Session) GuildIntegrations(guildID string, options ...RequestOption) (s
 // integrationType  : The Integration type.
 // integrationID    : The ID of an integration.
 func (s *Session) GuildIntegrationCreate(guildID, integrationType, integrationID string, options ...RequestOption) (err error) {
-
 	data := struct {
 		Type string `json:"type"`
 		ID   string `json:"id"`
@@ -1271,7 +1240,6 @@ func (s *Session) GuildIntegrationCreate(guildID, integrationType, integrationID
 // expireGracePeriod    : Period (in seconds) where the integration will ignore lapsed subscriptions.
 // enableEmoticons	    : Whether emoticons should be synced for this integration (twitch only currently).
 func (s *Session) GuildIntegrationEdit(guildID, integrationID string, expireBehavior, expireGracePeriod int, enableEmoticons bool, options ...RequestOption) (err error) {
-
 	data := struct {
 		ExpireBehavior    int  `json:"expire_behavior"`
 		ExpireGracePeriod int  `json:"expire_grace_period"`
@@ -1286,7 +1254,6 @@ func (s *Session) GuildIntegrationEdit(guildID, integrationID string, expireBeha
 // guildID          : The ID of a Guild.
 // integrationID    : The ID of an integration.
 func (s *Session) GuildIntegrationDelete(guildID, integrationID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildIntegration(guildID, integrationID), nil, EndpointGuildIntegration(guildID, ""), options...)
 	return
 }
@@ -1338,7 +1305,6 @@ func (s *Session) GuildSplash(guildID string, options ...RequestOption) (img ima
 // GuildEmbed returns the embed for a Guild.
 // guildID   : The ID of a Guild.
 func (s *Session) GuildEmbed(guildID string, options ...RequestOption) (st *GuildEmbed, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildEmbed(guildID), nil, EndpointGuildEmbed(guildID), options...)
 	if err != nil {
 		return
@@ -1363,7 +1329,6 @@ func (s *Session) GuildEmbedEdit(guildID string, data *GuildEmbed, options ...Re
 // actionType  : If provided the log will be filtered for the given Action Type.
 // limit       : The number messages that can be returned. (default 50, min 1, max 100)
 func (s *Session) GuildAuditLog(guildID, userID, beforeID string, actionType, limit int, options ...RequestOption) (st *GuildAuditLog, err error) {
-
 	uri := EndpointGuildAuditLogs(guildID)
 
 	v := url.Values{}
@@ -1395,7 +1360,6 @@ func (s *Session) GuildAuditLog(guildID, userID, beforeID string, actionType, li
 // GuildEmojis returns all emoji
 // guildID : The ID of a Guild.
 func (s *Session) GuildEmojis(guildID string, options ...RequestOption) (emoji []*Emoji, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildEmojis(guildID), nil, EndpointGuildEmojis(guildID), options...)
 	if err != nil {
 		return
@@ -1450,7 +1414,6 @@ func (s *Session) GuildEmojiEdit(guildID, emojiID string, data *EmojiParams, opt
 // guildID : The ID of a Guild.
 // emojiID : The ID of an Emoji.
 func (s *Session) GuildEmojiDelete(guildID, emojiID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildEmoji(guildID, emojiID), nil, EndpointGuildEmojis(guildID), options...)
 	return
 }
@@ -1528,7 +1491,6 @@ func (s *Session) ApplicationEmojiDelete(appID, emojiID string, options ...Reque
 // GuildTemplate returns a GuildTemplate for the given code
 // templateCode: The Code of a GuildTemplate
 func (s *Session) GuildTemplate(templateCode string, options ...RequestOption) (st *GuildTemplate, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildTemplate(templateCode), nil, EndpointGuildTemplate(templateCode), options...)
 	if err != nil {
 		return
@@ -1543,7 +1505,6 @@ func (s *Session) GuildTemplate(templateCode string, options ...RequestOption) (
 // name: The name of the guild (2-100) characters
 // icon: base64 encoded 128x128 image for the guild icon
 func (s *Session) GuildCreateWithTemplate(templateCode, name, icon string, options ...RequestOption) (st *Guild, err error) {
-
 	data := struct {
 		Name string `json:"name"`
 		Icon string `json:"icon"`
@@ -1561,7 +1522,6 @@ func (s *Session) GuildCreateWithTemplate(templateCode, name, icon string, optio
 // GuildTemplates returns all of GuildTemplates
 // guildID: The ID of the guild
 func (s *Session) GuildTemplates(guildID string, options ...RequestOption) (st []*GuildTemplate, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildTemplates(guildID), nil, EndpointGuildTemplates(guildID), options...)
 	if err != nil {
 		return
@@ -1588,7 +1548,6 @@ func (s *Session) GuildTemplateCreate(guildID string, data *GuildTemplateParams,
 // guildID: The ID of the guild
 // templateCode: The code of the template
 func (s *Session) GuildTemplateSync(guildID, templateCode string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("PUT", EndpointGuildTemplateSync(guildID, templateCode), nil, EndpointGuildTemplateSync(guildID, ""), options...)
 	return
 }
@@ -1598,7 +1557,6 @@ func (s *Session) GuildTemplateSync(guildID, templateCode string, options ...Req
 // templateCode : The code of the template
 // data         : New template metadata
 func (s *Session) GuildTemplateEdit(guildID, templateCode string, data *GuildTemplateParams, options ...RequestOption) (st *GuildTemplate, err error) {
-
 	body, err := s.RequestWithBucketID("PATCH", EndpointGuildTemplateSync(guildID, templateCode), data, EndpointGuildTemplateSync(guildID, ""), options...)
 	if err != nil {
 		return
@@ -1612,7 +1570,6 @@ func (s *Session) GuildTemplateEdit(guildID, templateCode string, data *GuildTem
 // guildID: The ID of the guild
 // templateCode: The code of the template
 func (s *Session) GuildTemplateDelete(guildID, templateCode string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildTemplateSync(guildID, templateCode), nil, EndpointGuildTemplateSync(guildID, ""), options...)
 	return
 }
@@ -1644,7 +1601,6 @@ func (s *Session) ChannelEdit(channelID string, data *ChannelEdit, options ...Re
 
 	err = unmarshal(body, &st)
 	return
-
 }
 
 // ChannelEditComplex edits an existing channel, replacing the parameters entirely with ChannelEdit struct
@@ -1658,7 +1614,6 @@ func (s *Session) ChannelEditComplex(channelID string, data *ChannelEdit, option
 // ChannelDelete deletes the given channel
 // channelID  : The ID of a Channel
 func (s *Session) ChannelDelete(channelID string, options ...RequestOption) (st *Channel, err error) {
-
 	body, err := s.RequestWithBucketID("DELETE", EndpointChannel(channelID), nil, EndpointChannel(channelID), options...)
 	if err != nil {
 		return
@@ -1672,7 +1627,6 @@ func (s *Session) ChannelDelete(channelID string, options ...RequestOption) (st 
 // the given channel.
 // channelID  : The ID of a Channel
 func (s *Session) ChannelTyping(channelID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("POST", EndpointChannelTyping(channelID), nil, EndpointChannelTyping(channelID), options...)
 	return
 }
@@ -1685,7 +1639,6 @@ func (s *Session) ChannelTyping(channelID string, options ...RequestOption) (err
 // afterID   : If provided all messages returned will be after given ID.
 // aroundID  : If provided all messages returned will be around given ID.
 func (s *Session) ChannelMessages(channelID string, limit int, beforeID, afterID, aroundID string, options ...RequestOption) (st []*Message, err error) {
-
 	uri := EndpointChannelMessages(channelID)
 
 	v := url.Values{}
@@ -1718,7 +1671,6 @@ func (s *Session) ChannelMessages(channelID string, limit int, beforeID, afterID
 // channeld  : The ID of a Channel
 // messageID : the ID of a Message
 func (s *Session) ChannelMessage(channelID, messageID string, options ...RequestOption) (st *Message, err error) {
-
 	response, err := s.RequestWithBucketID("GET", EndpointChannelMessage(channelID, messageID), nil, EndpointChannelMessage(channelID, ""), options...)
 	if err != nil {
 		return
@@ -1926,7 +1878,6 @@ func (s *Session) ChannelMessageEditEmbeds(channelID, messageID string, embeds [
 
 // ChannelMessageDelete deletes a message from the Channel.
 func (s *Session) ChannelMessageDelete(channelID, messageID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointChannelMessage(channelID, messageID), nil, EndpointChannelMessage(channelID, ""), options...)
 	return
 }
@@ -1937,7 +1888,6 @@ func (s *Session) ChannelMessageDelete(channelID, messageID string, options ...R
 // channelID : The ID of the channel for the messages to delete.
 // messages  : The IDs of the messages to be deleted. A slice of string IDs. A maximum of 100 messages.
 func (s *Session) ChannelMessagesBulkDelete(channelID string, messages []string, options ...RequestOption) (err error) {
-
 	if len(messages) == 0 {
 		return
 	}
@@ -1963,7 +1913,6 @@ func (s *Session) ChannelMessagesBulkDelete(channelID string, messages []string,
 // channelID: The ID of a channel.
 // messageID: The ID of a message.
 func (s *Session) ChannelMessagePin(channelID, messageID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("PUT", EndpointChannelMessagePin(channelID, messageID), nil, EndpointChannelMessagePin(channelID, ""), options...)
 	return
 }
@@ -1972,7 +1921,6 @@ func (s *Session) ChannelMessagePin(channelID, messageID string, options ...Requ
 // channelID: The ID of a channel.
 // messageID: The ID of a message.
 func (s *Session) ChannelMessageUnpin(channelID, messageID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointChannelMessagePin(channelID, messageID), nil, EndpointChannelMessagePin(channelID, ""), options...)
 	return
 }
@@ -1981,9 +1929,7 @@ func (s *Session) ChannelMessageUnpin(channelID, messageID string, options ...Re
 // within a given channel
 // channelID : The ID of a Channel.
 func (s *Session) ChannelMessagesPinned(channelID string, options ...RequestOption) (st []*Message, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointChannelMessagesPins(channelID), nil, EndpointChannelMessagesPins(channelID), options...)
-
 	if err != nil {
 		return
 	}
@@ -2013,7 +1959,6 @@ func (s *Session) ChannelFileSendWithMessage(channelID, content string, name str
 // ChannelInvites returns an array of Invite structures for the given channel
 // channelID   : The ID of a Channel
 func (s *Session) ChannelInvites(channelID string, options ...RequestOption) (st []*Invite, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointChannelInvites(channelID), nil, EndpointChannelInvites(channelID), options...)
 	if err != nil {
 		return
@@ -2027,7 +1972,6 @@ func (s *Session) ChannelInvites(channelID string, options ...RequestOption) (st
 // channelID   : The ID of a Channel
 // i           : An Invite struct with the values MaxAge, MaxUses and Temporary defined.
 func (s *Session) ChannelInviteCreate(channelID string, i Invite, options ...RequestOption) (st *Invite, err error) {
-
 	data := struct {
 		MaxAge    int  `json:"max_age"`
 		MaxUses   int  `json:"max_uses"`
@@ -2048,7 +1992,6 @@ func (s *Session) ChannelInviteCreate(channelID string, i Invite, options ...Req
 // NOTE: This func name may changed.  Using Set instead of Create because
 // you can both create a new override or update an override with this function.
 func (s *Session) ChannelPermissionSet(channelID, targetID string, targetType PermissionOverwriteType, allow, deny int64, options ...RequestOption) (err error) {
-
 	data := struct {
 		ID    string                  `json:"id"`
 		Type  PermissionOverwriteType `json:"type"`
@@ -2063,7 +2006,6 @@ func (s *Session) ChannelPermissionSet(channelID, targetID string, targetType Pe
 // ChannelPermissionDelete deletes a specific permission override for the given channel.
 // NOTE: Name of this func may change.
 func (s *Session) ChannelPermissionDelete(channelID, targetID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointChannelPermission(channelID, targetID), nil, EndpointChannelPermission(channelID, ""), options...)
 	return
 }
@@ -2073,7 +2015,6 @@ func (s *Session) ChannelPermissionDelete(channelID, targetID string, options ..
 // channelID   : The ID of a Channel
 // messageID   : The ID of a Message
 func (s *Session) ChannelMessageCrosspost(channelID, messageID string, options ...RequestOption) (st *Message, err error) {
-
 	endpoint := EndpointChannelMessageCrosspost(channelID, messageID)
 
 	body, err := s.RequestWithBucketID("POST", endpoint, nil, endpoint, options...)
@@ -2089,7 +2030,6 @@ func (s *Session) ChannelMessageCrosspost(channelID, messageID string, options .
 // channelID   : The ID of a News Channel
 // targetID    : The ID of a Channel where the News Channel should post to
 func (s *Session) ChannelNewsFollow(channelID, targetID string, options ...RequestOption) (st *ChannelFollow, err error) {
-
 	endpoint := EndpointChannelFollow(channelID)
 
 	data := struct {
@@ -2112,7 +2052,6 @@ func (s *Session) ChannelNewsFollow(channelID, targetID string, options ...Reque
 // Invite returns an Invite structure of the given invite
 // inviteID : The invite code
 func (s *Session) Invite(inviteID string, options ...RequestOption) (st *Invite, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointInvite(inviteID), nil, EndpointInvite(""), options...)
 	if err != nil {
 		return
@@ -2125,7 +2064,6 @@ func (s *Session) Invite(inviteID string, options ...RequestOption) (st *Invite,
 // InviteWithCounts returns an Invite structure of the given invite including approximate member counts
 // inviteID : The invite code
 func (s *Session) InviteWithCounts(inviteID string, options ...RequestOption) (st *Invite, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointInvite(inviteID)+"?with_counts=true", nil, EndpointInvite(""), options...)
 	if err != nil {
 		return
@@ -2169,7 +2107,6 @@ func (s *Session) InviteComplex(inviteID, guildScheduledEventID string, withCoun
 // InviteDelete deletes an existing invite
 // inviteID   : the code of an invite
 func (s *Session) InviteDelete(inviteID string, options ...RequestOption) (st *Invite, err error) {
-
 	body, err := s.RequestWithBucketID("DELETE", EndpointInvite(inviteID), nil, EndpointInvite(""), options...)
 	if err != nil {
 		return
@@ -2182,7 +2119,6 @@ func (s *Session) InviteDelete(inviteID string, options ...RequestOption) (st *I
 // InviteAccept accepts an Invite to a Guild or Channel
 // inviteID : The invite code
 func (s *Session) InviteAccept(inviteID string, options ...RequestOption) (st *Invite, err error) {
-
 	body, err := s.RequestWithBucketID("POST", EndpointInvite(inviteID), nil, EndpointInvite(""), options...)
 	if err != nil {
 		return
@@ -2196,9 +2132,21 @@ func (s *Session) InviteAccept(inviteID string, options ...RequestOption) (st *I
 // Functions specific to Discord Voice
 // ------------------------------------------------------------------------------------------------
 
+// UserVoiceState Returns the current user's voice state in the guild
+func (s *Session) UserVoiceState(userID, guildID string, options ...RequestOption) (st *VoiceState, err error) {
+	endpoint := EndpointUserVoiceState(userID, guildID)
+
+	body, err := s.RequestWithBucketID("GET", endpoint, nil, EndpointUserVoiceState(userID, guildID), options...)
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
 // VoiceRegions returns the voice server regions
 func (s *Session) VoiceRegions(options ...RequestOption) (st []*VoiceRegion, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointVoiceRegions, nil, EndpointVoiceRegions, options...)
 	if err != nil {
 		return
@@ -2214,7 +2162,6 @@ func (s *Session) VoiceRegions(options ...RequestOption) (st []*VoiceRegion, err
 
 // Gateway returns the websocket Gateway address
 func (s *Session) Gateway(options ...RequestOption) (gateway string, err error) {
-
 	response, err := s.RequestWithBucketID("GET", EndpointGateway, nil, EndpointGateway, options...)
 	if err != nil {
 		return
@@ -2242,7 +2189,6 @@ func (s *Session) Gateway(options ...RequestOption) (gateway string, err error) 
 
 // GatewayBot returns the websocket Gateway address and the recommended number of shards
 func (s *Session) GatewayBot(options ...RequestOption) (st *GatewayBotResponse, err error) {
-
 	response, err := s.RequestWithBucketID("GET", EndpointGatewayBot, nil, EndpointGatewayBot, options...)
 	if err != nil {
 		return
@@ -2269,7 +2215,6 @@ func (s *Session) GatewayBot(options ...RequestOption) (st *GatewayBotResponse, 
 // name     : The name of the webhook.
 // avatar   : The avatar of the webhook.
 func (s *Session) WebhookCreate(channelID, name, avatar string, options ...RequestOption) (st *Webhook, err error) {
-
 	data := struct {
 		Name   string `json:"name"`
 		Avatar string `json:"avatar,omitempty"`
@@ -2288,7 +2233,6 @@ func (s *Session) WebhookCreate(channelID, name, avatar string, options ...Reque
 // ChannelWebhooks returns all webhooks for a given channel.
 // channelID: The ID of a channel.
 func (s *Session) ChannelWebhooks(channelID string, options ...RequestOption) (st []*Webhook, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointChannelWebhooks(channelID), nil, EndpointChannelWebhooks(channelID), options...)
 	if err != nil {
 		return
@@ -2302,7 +2246,6 @@ func (s *Session) ChannelWebhooks(channelID string, options ...RequestOption) (s
 // GuildWebhooks returns all webhooks for a given guild.
 // guildID: The ID of a Guild.
 func (s *Session) GuildWebhooks(guildID string, options ...RequestOption) (st []*Webhook, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointGuildWebhooks(guildID), nil, EndpointGuildWebhooks(guildID), options...)
 	if err != nil {
 		return
@@ -2316,7 +2259,6 @@ func (s *Session) GuildWebhooks(guildID string, options ...RequestOption) (st []
 // Webhook returns a webhook for a given ID
 // webhookID: The ID of a webhook.
 func (s *Session) Webhook(webhookID string, options ...RequestOption) (st *Webhook, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointWebhook(webhookID), nil, EndpointWebhooks, options...)
 	if err != nil {
 		return
@@ -2331,7 +2273,6 @@ func (s *Session) Webhook(webhookID string, options ...RequestOption) (st *Webho
 // webhookID: The ID of a webhook.
 // token    : The auth token for the webhook.
 func (s *Session) WebhookWithToken(webhookID, token string, options ...RequestOption) (st *Webhook, err error) {
-
 	body, err := s.RequestWithBucketID("GET", EndpointWebhookToken(webhookID, token), nil, EndpointWebhookToken("", ""), options...)
 	if err != nil {
 		return
@@ -2347,7 +2288,6 @@ func (s *Session) WebhookWithToken(webhookID, token string, options ...RequestOp
 // name     : The name of the webhook.
 // avatar   : The avatar of the webhook.
 func (s *Session) WebhookEdit(webhookID, name, avatar, channelID string, options ...RequestOption) (st *Webhook, err error) {
-
 	data := struct {
 		Name      string `json:"name,omitempty"`
 		Avatar    string `json:"avatar,omitempty"`
@@ -2370,7 +2310,6 @@ func (s *Session) WebhookEdit(webhookID, name, avatar, channelID string, options
 // name     : The name of the webhook.
 // avatar   : The avatar of the webhook.
 func (s *Session) WebhookEditWithToken(webhookID, token, name, avatar string, options ...RequestOption) (st *Webhook, err error) {
-
 	data := struct {
 		Name   string `json:"name,omitempty"`
 		Avatar string `json:"avatar,omitempty"`
@@ -2390,7 +2329,6 @@ func (s *Session) WebhookEditWithToken(webhookID, token, name, avatar string, op
 // WebhookDelete deletes a webhook for a given ID
 // webhookID: The ID of a webhook.
 func (s *Session) WebhookDelete(webhookID string, options ...RequestOption) (err error) {
-
 	_, err = s.RequestWithBucketID("DELETE", EndpointWebhook(webhookID), nil, EndpointWebhooks, options...)
 
 	return
@@ -2400,7 +2338,6 @@ func (s *Session) WebhookDelete(webhookID string, options ...RequestOption) (err
 // webhookID: The ID of a webhook.
 // token    : The auth token for the webhook.
 func (s *Session) WebhookDeleteWithToken(webhookID, token string, options ...RequestOption) (st *Webhook, err error) {
-
 	body, err := s.RequestWithBucketID("DELETE", EndpointWebhookToken(webhookID, token), nil, EndpointWebhookToken("", ""), options...)
 	if err != nil {
 		return
@@ -2499,7 +2436,6 @@ func (s *Session) WebhookMessageEdit(webhookID, token, messageID string, data *W
 		}
 	} else {
 		response, err = s.RequestWithBucketID("PATCH", uri, data, EndpointWebhookToken("", ""), options...)
-
 		if err != nil {
 			return nil, err
 		}
@@ -2525,7 +2461,6 @@ func (s *Session) WebhookMessageDelete(webhookID, token, messageID string, optio
 // messageID : The message ID.
 // emojiID   : Either the unicode emoji for the reaction, or a guild emoji identifier in name:id format (e.g. "hello:1234567654321")
 func (s *Session) MessageReactionAdd(channelID, messageID, emojiID string, options ...RequestOption) error {
-
 	// emoji such as  #⃣ need to have # escaped
 	emojiID = strings.Replace(emojiID, "#", "%23", -1)
 	_, err := s.RequestWithBucketID("PUT", EndpointMessageReaction(channelID, messageID, emojiID, "@me"), nil, EndpointMessageReaction(channelID, "", "", ""), options...)
@@ -2539,7 +2474,6 @@ func (s *Session) MessageReactionAdd(channelID, messageID, emojiID string, optio
 // emojiID   : Either the unicode emoji for the reaction, or a guild emoji identifier.
 // userID	 : @me or ID of the user to delete the reaction for.
 func (s *Session) MessageReactionRemove(channelID, messageID, emojiID, userID string, options ...RequestOption) error {
-
 	// emoji such as  #⃣ need to have # escaped
 	emojiID = strings.Replace(emojiID, "#", "%23", -1)
 	_, err := s.RequestWithBucketID("DELETE", EndpointMessageReaction(channelID, messageID, emojiID, userID), nil, EndpointMessageReaction(channelID, "", "", ""), options...)
@@ -2551,7 +2485,6 @@ func (s *Session) MessageReactionRemove(channelID, messageID, emojiID, userID st
 // channelID : The channel ID
 // messageID : The message ID.
 func (s *Session) MessageReactionsRemoveAll(channelID, messageID string, options ...RequestOption) error {
-
 	_, err := s.RequestWithBucketID("DELETE", EndpointMessageReactionsAll(channelID, messageID), nil, EndpointMessageReactionsAll(channelID, messageID), options...)
 
 	return err
@@ -2562,7 +2495,6 @@ func (s *Session) MessageReactionsRemoveAll(channelID, messageID string, options
 // messageID : The message ID
 // emojiID   : The emoji ID
 func (s *Session) MessageReactionsRemoveEmoji(channelID, messageID, emojiID string, options ...RequestOption) error {
-
 	// emoji such as  #⃣ need to have # escaped
 	emojiID = strings.Replace(emojiID, "#", "%23", -1)
 	_, err := s.RequestWithBucketID("DELETE", EndpointMessageReactions(channelID, messageID, emojiID), nil, EndpointMessageReactions(channelID, messageID, emojiID), options...)
@@ -2805,7 +2737,6 @@ func (s *Session) ThreadMember(threadID, memberID string, withMember bool, optio
 
 	var body []byte
 	body, err = s.RequestWithBucketID("GET", uri, nil, uri, options...)
-
 	if err != nil {
 		return
 	}
@@ -2838,7 +2769,6 @@ func (s *Session) ThreadMembers(threadID string, limit int, withMember bool, aft
 
 	var body []byte
 	body, err = s.RequestWithBucketID("GET", uri, nil, uri, options...)
-
 	if err != nil {
 		return
 	}
@@ -3230,7 +3160,6 @@ func (s *Session) StageInstance(channelID string, options ...RequestOption) (si 
 // channelID : The ID of the Stage channel
 // data : The data to edit the Stage instance
 func (s *Session) StageInstanceEdit(channelID string, data *StageInstanceParams, options ...RequestOption) (si *StageInstance, err error) {
-
 	body, err := s.RequestWithBucketID("PATCH", EndpointStageInstance(channelID), data, EndpointStageInstance(channelID), options...)
 	if err != nil {
 		return
@@ -3508,7 +3437,6 @@ func (s *Session) UserApplicationRoleConnection(appID string) (st *ApplicationRo
 
 	err = unmarshal(body, &st)
 	return
-
 }
 
 // UserApplicationRoleConnectionUpdate updates and returns user role connection to the specified application.
